@@ -5,9 +5,9 @@ Implement at least 3 SOLID principles in a simple project.
 
 ### Project Idea
 I made a small **Coffee Shop** example that follows **3 SOLID principles**:
-- **SRP (Single Responsibility Principle)**
-- **OCP (Open/Closed Principle)**
-- **DIP (Dependency Inversion Principle)**
+- **Single Responsibility Principle**
+- **Open/Closed Principle**
+- **Dependency Inversion Principle**
 
 Everything is written in one Java file inside the `src` package.
 
