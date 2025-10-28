@@ -15,9 +15,9 @@ public class Main {
 
         Menu menu = Menu.getInstance();
 
-        menu.add(new EspressoFactory().createDrink());
-        menu.add(new LatteFactory().createDrink());
-        menu.add(new CappuccinoFactory().createDrink());
+//        menu.add(new EspressoFactory().createDrink());
+//        menu.add(new LatteFactory().createDrink());
+//        menu.add(new CappuccinoFactory().createDrink());
 
         CustomDrinkBuilder regularBuilder = new RegularDrinkBuilder();
         CustomDrinkBuilder specialBuilder = new SpecialtyDrinkBuilder();

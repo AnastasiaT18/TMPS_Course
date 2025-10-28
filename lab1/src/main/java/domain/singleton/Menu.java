@@ -1,9 +1,4 @@
 package domain.singleton;
-
-
-import domain.factory.CappuccinoFactory;
-import domain.factory.EspressoFactory;
-import domain.factory.LatteFactory;
 import domain.models.Drink;
 
 import java.util.List;
@@ -11,7 +6,6 @@ import java.util.ArrayList;
 
 public class Menu {
     private static Menu instance;
-
     private List<Drink> menuItems;
 
     private Menu(){
