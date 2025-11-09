@@ -1,12 +1,12 @@
 package domain.singleton;
-import domain.models.Drink;
+import domain.structural.composite.MenuComponent;
 
 import java.util.List;
 import java.util.ArrayList;
 
 public class Menu {
     private static Menu instance;
-    private List<Drink> menuItems;
+    private List<MenuComponent> menuItems;
 
     private Menu(){
         menuItems = new ArrayList<>();
@@ -20,17 +20,18 @@ public class Menu {
     }
 
     public void printMenu() {
-        for (Drink drink : menuItems) {
-            System.out.println(drink.getName() +": " + drink.getPrice());
+        for (MenuComponent item : menuItems) {
+//            System.out.println(item.getName() + ": " +  item.getPrice());
+            item.print();
         }
         System.out.println("-----------------------");
     }
 
-    public List<Drink> getMenuItems() {
+    public List<MenuComponent> getMenuItems() {
         return menuItems;
     }
 
-    public void add(Drink drink) {
-        menuItems.add(drink);
+    public void add(MenuComponent item) {
+        menuItems.add(item);
     }
 }

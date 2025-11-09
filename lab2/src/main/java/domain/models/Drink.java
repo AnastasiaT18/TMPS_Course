@@ -1,20 +1,20 @@
 package domain.models;
 
-public class Drink {
-    private final String name;
-    private final double price;
+import domain.structural.composite.BaseItem;
 
+public class Drink extends BaseItem {
     public Drink(String name, double price) {
-        this.name = name;
-        this.price = price;
+        super(name, price);
     }
 
-    public String getName() {
-        return name;
-    }
 
-    public double getPrice() {
-        return price;
-    }
+//
+//    public String getName() {
+//        return name;
+//    }
+//
+//    public double getPrice() {
+//        return price;
+//    }
 
 }
