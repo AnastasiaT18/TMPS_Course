@@ -56,6 +56,8 @@ public class CoffeeShopFacade {
                 MARSHMALLOWS
         );
 
+        customDrink.print();
+
         menu.add(customDrink);
     }
 

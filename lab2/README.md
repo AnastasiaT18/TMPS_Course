@@ -1,182 +1,171 @@
-# Laboratory Work #1 – Creational Design Patterns
+# Laboratory Work #2 – Structural Design Patterns
 Author: Anastasia Tiganescu
 
 ## Objectives:
-1. Study and understand the Creational Design Patterns.
+1. Study and understand the Structural Design Patterns.
 
-2. Choose a domain, define its main classes/models/entities and choose the appropriate instantiation mechanisms.
+2. As a continuation of the previous laboratory work, think about the functionalities that your system will need to provide to the user.
 
-3. Use some creational design patterns for object instantiation in a sample project.
+3. Implement some additional functionalities using structural design patterns.
 
 
 ## Main tasks:
-1. Choose an OO programming language and a suitable IDE or Editor (No frameworks/libs/engines allowed).
+1. By extending your project, implement at least 3 structural design patterns in your project:
+   - The implemented design pattern should help to perform the tasks involved in your system.
+   - The object creation mechanisms/patterns can now be buried into the functionalities instead of using them into the client.
+   - There should only be one client for the whole system.
+2. Keep your files grouped (into packages/directories) by their responsibilities (an example project structure):
 
-2. Select a domain area for the sample project.
-
-3. Define the main involved classes and think about what instantiation mechanisms are needed.
-
-4. Based on the previous point, implement atleast 3 creational design patterns in your project.
+3. Document your work in a separate markdown file.
 
 ## Chosen Domain
 
-The chosen domain is a Coffee Shop Management System, which simulates how drinks (like espresso, latte, and cappuccino) are created, customized, and displayed on a dynamic menu.
-This project focuses on how different patterns can simplify object creation and enhance flexibility — especially when building both standard and customized drinks.
+The chosen domain remains the Coffee Shop Management System, which simulates how drinks are created, customized, and displayed on a shared menu.
+
+In this lab, the focus shifts from object creation (covered in Lab 1) to object composition — how multiple classes and objects can work together to provide new, flexible functionalities.
 
 ## Used Design Patterns
 
-- Factory Method – to create different types of base drinks (Espresso, Latte, Cappuccino).
+- Decorator Pattern – for dynamic, on-demand customization of drinks.
 
-- Singleton – to manage a single shared menu instance across the system.
+- Composite Pattern – for grouping items like drinks and snacks into combos.
 
-- Builder – to construct complex customized drinks (like “Iced Mocha” or “Pumpkin Spice Latte”) step-by-step.
+- Facade Pattern – for simplifying access to the entire system through one interface.
 
 ## Implementation
 
-### Singleton Pattern 
+### Decorator Pattern 
 #### Purpose
 
-The Singleton Pattern ensures that a class has only one instance throughout the system and provides a global access point to it.
-In this project, the `Menu` class represents the coffee shop’s shared menu — a single, consistent list of available drinks that can be accessed and updated from anywhere in the application.
+The Decorator Pattern allows behavior to be added to individual objects dynamically, without modifying their original class.
+In the coffee shop system, this pattern is used to create custom drinks on the fly — for example, adding syrup, toppings, whipped cream, or ice to any base drink, depending on the client’s preferences.
 
-The `Menu` class contains:
+While the Builder Pattern (from Lab 1) was used for predefined recipes like Caramel Latte or Pumpkin Spice Latte,
+the Decorator Pattern now enables fully dynamic customization — letting customers create their own drinks at runtime.
 
-- A private static instance field (instance), which stores the single allowed instance.
-- A private constructor, preventing external instantiation. 
-- A public static method getInstance() that either creates or returns the single instance. 
-- Methods for managing and printing the list of drinks.
+#### Implementation
+
+All decorators extend an abstract class DrinkDecorator, which itself extends the base class Drink.
+This allows decorators to wrap around any Drink object and modify its behavior without changing the underlying class.
 
 ```java
-public class Menu {
-    private static Menu instance;
-    private List<Drink> menuItems;
+public abstract class DrinkDecorator extends Drink {
+
+    protected final Drink drink;
+
+    DrinkDecorator(Drink drink) {
+        super(drink.getName(), drink.getPrice());
+        this.drink = drink;
+    }
+}
+```
+
+Each concrete decorator adds its own name and price modifications while keeping the structure flexible.
+
+#### Example: Ice Decorator
+
+```java
+public class IceDecorator extends DrinkDecorator {
     
-    private Menu(){
-        menuItems = new ArrayList<>();
-    }
-    
-    public static Menu getInstance() {
-        if (Menu.instance == null) {
-            Menu.instance = new Menu();
-        }
-        return Menu.instance;
+    public IceDecorator(Drink drink) {
+        super(drink);
     }
 
-    public void printMenu() {
-        for (Drink drink : menuItems) {
-            System.out.println(drink.getName() +": " + drink.getPrice());
-        }
-        System.out.println("-----------------------");
+    @Override
+    public String getName() {
+        return drink.getName() + " (iced)";
     }
 
-    public List<Drink> getMenuItems() {
-        return menuItems;
-    }
-
-    public void add(Drink drink) {
-        menuItems.add(drink);
+    @Override
+    public double getPrice() {
+        return drink.getPrice() + 2.0;
     }
 }
 
 ```
 
-All parts of the program — including factories, builders, and the client — interact with the same Menu object.
-This ensures a unified and consistent list of drinks, avoiding duplication or data conflicts.
+#### Example: Syrup Decorator
+
+```java
+public class SyrupDecorator extends DrinkDecorator {
+
+    private Syrup syrup;
+
+    public SyrupDecorator(Drink drink, Syrup syrup) {
+        super(drink);
+        this.syrup = syrup;
+    }
+
+    @Override
+    public String getName() {
+        return drink.getName() + " + " + syrup + " Syrup";
+    }
+
+    @Override
+    public double getPrice() {
+        return drink.getPrice() + 5.0;
+    }
+}
+
+```
+
+Other decorators, such as ToppingDecorator and WhippedCreamDecorator, follow the same structure.
 
 #### Example Usage (from Main)
 
+In the CoffeeShopFacade (will explain in the following sections), a dynamic drink is built step-by-step using decorators, starting from a base drink (Latte) and layering new features:
+
 ```java
-Menu menu = Menu.getInstance();
+   public void prepareCustomDrink() {
+    Drink customDrink = new ToppingDecorator(
+            new IceDecorator(
+                    new WhippedCreamDecorator(
+                            new SyrupDecorator(
+                                    new LatteFactory().createDrink(), COCONUT
+                            )
+                    )
+            ),
+            MARSHMALLOWS
+    );
 
-menu.add(new EspressoFactory().createDrink());
-menu.add(new LatteFactory().createDrink());
-menu.add(new CappuccinoFactory().createDrink());
-
-menu.printMenu();
+    menu.add(customDrink);
+}
 ```
 #### Output Example:
 ```
-Espresso: 20.0
-Latte: 40.0
-Cappuccino: 50.0
------------------------
+- Latte + COCONUT Syrup + WhippedCream (iced) + MARSHMALLOWS Topping: 54.0
+
 ```
 
 -----------------------
-### Factory Method
+### Composite Method
 #### Purpose
-The Factory Method pattern defines an interface for creating an
-object but lets subclasses decide which class to instantiate. 
-This allows the code to remain flexible and decoupled from 
-specific implementations.
+The Composite Pattern lets you treat individual objects and groups of objects in the same way. It is especially useful for representing tree-like structures, such as menus or orders that contain other items.
 
-In my lab, the Factory Method is used to create different types of coffee drinks (Espresso, Cappuccino, Latte) without exposing the instantiation logic to the client. Each specific drink type has its own factory class responsible for creating that particular drink.
+In this project, the Composite pattern was used to create combos or bundles of items in the coffee shop system.
+For example, a combo can include both drinks and snacks — or even other combos — and still be handled as a single MenuComponent.
 
-The abstract class DrinkFactory defines the method createDrink() that subclasses must implement.
-```java
-package domain.factory;
+In my code, this allows the system to specifically calculate the total price and display the entire order tree recursively.
 
-import domain.models.Drink;
+#### Implementation
 
-public abstract class DrinkFactory {
-    public abstract Drink createDrink();
-}
-```
-
-Each concrete factory (e.g., EspressoFactory, CappuccinoFactory, LatteFactory) overrides this method to return a corresponding Drink object.
+To implement this pattern, I first restructured my model slightly compared to Lab 1.
+Instead of having Drink as the root class, I created an abstract class BaseItem and an interface MenuComponent to unify the structure of all menu elements.
 
 ```java
-package domain.factory;
-
-import domain.models.Drink;
-import domain.models.Espresso;
-
-public class EspressoFactory extends DrinkFactory{
-    @Override
-    public Drink createDrink() {
-        return new Espresso();
-    }
-}
-```
-```java
-package domain.factory;
-
-import domain.models.Drink;
-import domain.models.Latte;
-
-public class LatteFactory extends DrinkFactory{
-    @Override
-    public Drink createDrink() {
-        return new Latte();
-    }
+public interface MenuComponent {
+    String getName();
+    double getPrice();
+    void print();
 }
 ```
 
 ```java
-package domain.factory;
-
-import domain.models.Cappuccino;
-import domain.models.Drink;
-
-public class CappuccinoFactory extends DrinkFactory{
-    @Override
-    public Drink createDrink() {
-        return new Cappuccino();
-    }
-}
-```
-
-`Drink` is the base class (or “product”) in the Factory Method structure.
-It defines common properties (name, price) and serves as the superclass for all concrete drinks.
-
-```java
-package domain.models;
-
-public class Drink {
+public abstract class BaseItem implements MenuComponent {
     private final String name;
     private final double price;
 
-    public Drink(String name, double price) {
+    public BaseItem(String name, double price) {
         this.name = name;
         this.price = price;
     }
@@ -189,145 +178,244 @@ public class Drink {
         return price;
     }
 
-}
-```
-
-`Espresso` (or `Latte`, `Cappuccino`) extends `Drink`, calling the superclass constructor to set specific attributes like name and price.
-
-```java
-package domain.models;
-
-public class Espresso extends Drink{
-    public Espresso() {
-        super("Espresso", 20);
+    public void print() {
+        System.out.println("- " + this.getName() + ": " + this.getPrice());
     }
 }
 ```
 
-#### Example Usage (from Main)
+Each individual menu item (drink or snack - leaf components) extends BaseItem, while groups of items (combos) implement the same MenuComponent interface — making them all compatible in the same hierarchy.
 
 ```java
-Menu menu = Menu.getInstance();
-
-menu.add(new EspressoFactory().createDrink());
-menu.add(new LatteFactory().createDrink());
-menu.add(new CappuccinoFactory().createDrink());
-
-menu.printMenu();
-```
-#### Output Example:
-```
-Espresso: 20.0
-Latte: 40.0
-Cappuccino: 50.0
------------------------
-```
------------------------
-
-### Builder Pattern 
-#### Purpose
-The Builder Pattern is used to construct complex objects step by step.
-It allows you to create different representations of an object using the same construction process.
-
-In my lab, the Builder Pattern was used to create customized coffee drinks — with flexible combinations of base type, size, syrup, toppings, ice, and whipped cream — while keeping the creation process organized and separated from the final product class.
-
-I started by defining the `CustomDrinkBuilder` interface, which contains all the steps necessary to construct a coffee drink:
-
-```java 
-package domain.builder;
-
-import domain.models.CustomDrink;
-import domain.models.Drink;
-
-public interface CustomDrinkBuilder {
-    void setName(String name);
-    void setPrice(double price);
-    void setBase(Drink base);
-    void setSize(Size size);
-    void addSyrup(Syrup syrup);
-    void addTopping(Topping topping);
-    void addWhippedCream(boolean hasWhippedCream);
-    void addIce(boolean hasIce);
-    CustomDrink build();
-}
-```
-
-I also created a new model called `CustomDrink`, which extends the base Drink class.
-It contains additional fields such as the selected syrup, topping, size, and boolean flags for ice and whipped cream.
-By doing this, I reused the existing Drink structure and extended it to represent complex beverages.
-
-```java
-public class CustomDrink extends Drink {
-    private final Drink baseDrink;
-    private final Size size;
-    private final Syrup syrup;
-    private final Topping topping;
-    private final boolean hasIce;
-    private final boolean hasWhippedCream;
-}
-```
-
-Then, I implemented two concrete builders:
-
-- `RegularDrinkBuilder`: for simpler drinks (no ice, no toppings, no whipped cream). 
-- `SpecialtyDrinkBuilder`: for advanced, highly customizable beverages.
-
-Each builder implements the same interface but behaves slightly differently depending on the type of drink being created.
-
-To simplify the drink creation process, I introduced a Director class called `CoffeeDirector`, which defines preset recipes such as Caramel Latte or Iced Chocolate Mocha.
-The Director encapsulates the building steps in a fixed order, ensuring that the final product is built consistently every time.
-
-```java
-public class CoffeeDirector {
-
-    public CustomDrink makeCaramelLatte(CustomDrinkBuilder builder) {
-        builder.setBase(new LatteFactory().createDrink());
-        builder.setSize(MEDIUM);
-        builder.addSyrup(CARAMEL);
-        builder.setName("Caramel Latte");
-        builder.setPrice(60);
-        return builder.build();
-    }
-
-    public CustomDrink makeChocolateCappuccino(CustomDrinkBuilder builder) {
-        builder.setBase(new CappuccinoFactory().createDrink());
-        builder.setSize(SMALL);
-        builder.addSyrup(CHOCOLATE);
-        builder.setName("Chocolate Cappuccino");
-        builder.setPrice(60);
-        return builder.build();
+public class Drink extends BaseItem {
+    public Drink(String name, double price) {
+        super(name, price);
     }
 }
+```
+
+```java
+public class Snack extends BaseItem{
+
+    public Snack(String name, double price) {
+        super(name, price);
+    }
+}
+```
+
+The Combo class stores a list of MenuComponent objects (which can be single items or other combos).
+It overrides getPrice() to sum up the prices of all included components, and print() recursively prints their structure.
+```java
+public class Combo implements MenuComponent {
+    private String name;
+    private List<MenuComponent> items = new ArrayList<>();
+
+
+    public Combo(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public String getName() {
+        return this.name;
+    }
+
+    @Override
+    public double getPrice() {
+        return items.stream().mapToDouble(MenuComponent::getPrice).sum();
+    }
+
+    @Override
+    public void print() {
+        System.out.println("\nCombo: " + name);
+        for (MenuComponent item : items) {
+            item.print();
+        }
+        System.out.println("Total (" + name + "): " + getPrice());
+    }
+
+    public void addComponent(MenuComponent component) {
+        items.add(component);
+    }
+
+    public void removeComponent(MenuComponent component) {
+        items.remove(component);
+    }
+}
+
 ```
 
 #### Example Usage 
-In the main class, I used both builders (RegularDrinkBuilder and SpecialtyDrinkBuilder) through the CoffeeDirector.
-The resulting drinks were then added to the Singleton Menu instance.
-This shows how the Builder Pattern integrates smoothly with other creational patterns.
+
+In the CoffeeShopFacade, I used this pattern to create nested combos of drinks and snacks:
 
 ```java
-CustomDrinkBuilder regularBuilder = new RegularDrinkBuilder();
-CustomDrinkBuilder specialBuilder = new SpecialtyDrinkBuilder();
+ public void createCombos() {
+        Combo morningCombo = new Combo("Morning Combo");
+        morningCombo.addComponent(new LatteFactory().createDrink());
+        morningCombo.addComponent(new Snack("Croissant", 15));
 
-CoffeeDirector director = new CoffeeDirector();
+        Combo afternoonCombo = new Combo("Afternoon Combo");
+        afternoonCombo.addComponent(new EspressoFactory().createDrink());
+        afternoonCombo.addComponent(new Snack("Cookie", 15));
 
-menu.add(director.makeCaramelLatte(regularBuilder));
-menu.add(director.makeChocolateCappuccino(specialBuilder));
-menu.add(director.makeIcedChocolateMocha(specialBuilder));
-menu.add(director.makeCinnamonCaramelLatte(specialBuilder));
-menu.add(director.makePumpkinSpiceLatte(specialBuilder));
+        Combo fullOrder = new Combo("Full Order");
+        fullOrder.addComponent(morningCombo);
+        fullOrder.addComponent(afternoonCombo);
 
-menu.printMenu();
+        menu.add(fullOrder);
+    }
+```
+
+#### Output Example:
+```
+Combo: Full Order
+
+Combo: Morning Combo
+- Latte: 40.0
+- Croissant: 15.0
+Total (Morning Combo): 55.0
+
+Combo: Afternoon Combo
+- Espresso: 20.0
+- Cookie: 15.0
+Total (Afternoon Combo): 35.0
+Total (Full Order): 90.0
+-----------------------
+```
+-----------------------
+
+### Facade Pattern 
+#### Purpose
+
+The Facade Pattern provides a simplified, unified interface to a complex subsystem. It hides the internal details and dependencies of multiple components behind a single high-level class, making it easier for clients to interact with the system.
+
+In this project, the CoffeeShopFacade class acts as the main entry point for all coffee shop operations.
+It brings together functionalities from multiple patterns — Factory, Builder, Decorator, Composite, and Singleton — and exposes them through simple, high-level methods like prepareBasicMenu(), prepareCustomDrink(), or createCombos().
+
+This allows the client (in this case, the Main class) to interact with the system using just a few intuitive method calls, without worrying about how objects are created, decorated, or added to the menu.
+
+```java
+public class CoffeeShopFacade {
+
+    private final Menu menu;
+    private final CoffeeDirector director;
+
+    public CoffeeShopFacade() {
+        this.menu = Menu.getInstance();
+        this.director = new CoffeeDirector();
+
+    }
+
+    public void prepareBasicMenu() {
+        menu.add(new EspressoFactory().createDrink());
+        menu.add(new LatteFactory().createDrink());
+        menu.add(new CappuccinoFactory().createDrink());
+    }
+
+    public void prepareSpecialtyMenu() {
+        CustomDrinkBuilder regularBuilder = new RegularDrinkBuilder();
+        CustomDrinkBuilder specialBuilder = new SpecialtyDrinkBuilder();
+
+        menu.add(director.makeCaramelLatte(regularBuilder));
+        menu.add(director.makeChocolateCappuccino(specialBuilder));
+        menu.add(director.makeIcedChocolateMocha(specialBuilder));
+        menu.add(director.makeCinnamonCaramelLatte(specialBuilder));
+        menu.add(director.makePumpkinSpiceLatte(specialBuilder));
+
+    }
+
+    public void showMenu() {
+        menu.printMenu();
+    }
+
+    public void prepareCustomDrink() {
+        Drink customDrink = new ToppingDecorator(
+                new IceDecorator(
+                        new WhippedCreamDecorator(
+                                new SyrupDecorator(
+                                        new LatteFactory().createDrink(), COCONUT
+                                )
+                        )
+                ),
+                MARSHMALLOWS
+        );
+
+        customDrink.print();
+
+        menu.add(customDrink);
+    }
+
+    public void createCombos() {
+        Combo morningCombo = new Combo("Morning Combo");
+        morningCombo.addComponent(new LatteFactory().createDrink());
+        morningCombo.addComponent(new Snack("Croissant", 15));
+
+        Combo afternoonCombo = new Combo("Afternoon Combo");
+        afternoonCombo.addComponent(new EspressoFactory().createDrink());
+        afternoonCombo.addComponent(new Snack("Cookie", 15));
+
+        Combo fullOrder = new Combo("Full Order");
+        fullOrder.addComponent(morningCombo);
+        fullOrder.addComponent(afternoonCombo);
+
+        menu.add(fullOrder);
+    }
+}
+
+```
+
+#### Example Usage 
+With the Facade in place, the Main class (the only client) doesn’t need to know anything about the internal structure of the system — it simply calls the high-level methods:
+
+```java
+public class Main {
+    public static void main(String[] args) {
+
+        CoffeeShopFacade coffeeShop = new CoffeeShopFacade();
+
+        coffeeShop.prepareBasicMenu();
+        coffeeShop.prepareSpecialtyMenu();
+
+        coffeeShop.prepareCustomDrink();
+        coffeeShop.createCombos();
+
+        coffeeShop.showMenu();
+
+    }
+}
 ```
 #### Output Example:
 ```
-Caramel Latte: 60.0
-Chocolate Cappuccino: 60.0
-Iced Chocolate Mocha: 65.0
-Cinnamon Caramel Latte: 75.0
-Pumpkin Spice Latte: 75.0
+- Espresso: 20.0
+- Latte: 40.0
+- Cappuccino: 50.0
+- Caramel Latte: 60.0
+- Chocolate Cappuccino: 60.0
+- Iced Chocolate Mocha: 65.0
+- Cinnamon Caramel Latte: 75.0
+- Pumpkin Spice Latte: 75.0
+- Latte + COCONUT Syrup + WhippedCream (iced) + MARSHMALLOWS Topping: 54.0
+
+Combo: Full Order
+
+Combo: Morning Combo
+- Latte: 40.0
+- Croissant: 15.0
+Total (Morning Combo): 55.0
+
+Combo: Afternoon Combo
+- Espresso: 20.0
+- Cookie: 15.0
+Total (Afternoon Combo): 35.0
+Total (Full Order): 90.0
 -----------------------
+
 ```
 
 ## Conclusion
-In this laboratory, I applied three creational design patterns — Singleton, Factory Method, and Builder — to a coffee shop system. The Singleton ensured a single, consistent menu instance, the Factory Method simplified creating different base drinks, and the Builder allowed step-by-step construction of complex, customized beverages. Using these patterns together made the code more organized, flexible, and easy to extend, demonstrating the practical benefits of structured object creation.
+In this laboratory work, I successfully extended the Coffee Shop Management System by integrating three structural design patterns — Decorator, Composite, and Facade — to enhance flexibility, scalability, and usability.
+
+The Decorator Pattern allowed dynamic drink customization without altering the base classes, making it possible to combine multiple modifications (like syrup, toppings, or ice) at runtime. The Composite Pattern introduced hierarchical menu structures, enabling individual items and combos to be treated uniformly. Finally, the Facade Pattern unified the system under a single, simple interface, making the client’s interaction effortless and clean.
+
+Overall, this lab demonstrated how structural design patterns help organize complex systems into modular, extensible, and easy-to-maintain architectures — turning the coffee shop simulation into a cohesive and realistic software model.
