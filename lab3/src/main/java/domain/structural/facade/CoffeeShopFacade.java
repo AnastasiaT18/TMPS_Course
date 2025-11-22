@@ -1,5 +1,8 @@
 package domain.structural.facade;
 
+import domain.behavioural.MenuLogger;
+import domain.behavioural.Strategy;
+import domain.behavioural.StudentStrategy;
 import domain.builder.CoffeeDirector;
 import domain.builder.CustomDrinkBuilder;
 import domain.builder.RegularDrinkBuilder;
@@ -10,11 +13,14 @@ import domain.factory.LatteFactory;
 import domain.models.Drink;
 import domain.singleton.Menu;
 import domain.structural.composite.Combo;
+import domain.structural.composite.MenuComponent;
 import domain.structural.composite.Snack;
 import domain.structural.decorator.IceDecorator;
 import domain.structural.decorator.SyrupDecorator;
 import domain.structural.decorator.ToppingDecorator;
 import domain.structural.decorator.WhippedCreamDecorator;
+
+import java.util.List;
 
 import static domain.builder.CustomDrinkBuilder.Syrup.COCONUT;
 import static domain.builder.CustomDrinkBuilder.Topping.MARSHMALLOWS;
@@ -26,8 +32,8 @@ public class CoffeeShopFacade {
 
     public CoffeeShopFacade() {
         this.menu = Menu.getInstance();
+        this.menu.addObserver(new MenuLogger());
         this.director = new CoffeeDirector();
-
     }
 
     public void prepareBasicMenu() {
@@ -49,7 +55,11 @@ public class CoffeeShopFacade {
     }
 
     public void showMenu() {
-        menu.printMenu();
+        menu.printMenu(null);
+    }
+
+    public void showStudentMenu(){
+        menu.printMenu("student");
     }
 
     public void prepareCustomDrink() {
@@ -64,7 +74,7 @@ public class CoffeeShopFacade {
                 MARSHMALLOWS
         );
 
-        customDrink.print();
+//        customDrink.print();
 
         menu.add(customDrink);
     }
@@ -83,5 +93,15 @@ public class CoffeeShopFacade {
         fullOrder.addComponent(afternoonCombo);
 
         menu.add(fullOrder);
+    }
+
+    public void refreshMenuItems() {
+        List<MenuComponent> items = menu.getMenuItems();
+
+        if (!items.isEmpty()) {
+            MenuComponent lastItem = items.getLast();
+            menu.remove(lastItem);
+        }
+
     }
 }

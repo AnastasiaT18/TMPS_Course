@@ -18,6 +18,6 @@ public abstract class BaseItem implements MenuComponent {
     }
 
     public void print() {
-        System.out.println("- " + this.getName() + ": " + this.getPrice());
+        System.out.println(this.getName() + ".........." + this.getPrice());
     }
 }
