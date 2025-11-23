@@ -1,421 +1,287 @@
-# Laboratory Work #2 – Structural Design Patterns
+# Laboratory Work #3 – Behavioral Design Patterns
 Author: Anastasia Tiganescu
 
 ## Objectives:
-1. Study and understand the Structural Design Patterns.
+1. Study and understand the Behavioral Design Patterns.
 
-2. As a continuation of the previous laboratory work, think about the functionalities that your system will need to provide to the user.
+2. As a continuation of the previous laboratory work, think about what communication between software entities might be involed in your system.
 
-3. Implement some additional functionalities using structural design patterns.
+3. Implement some additional functionalities using behavioral design patterns.
 
 
 ## Main tasks:
-1. By extending your project, implement at least 3 structural design patterns in your project:
+1. By extending your project, implement at least 1 behavioral design pattern in your project:
    - The implemented design pattern should help to perform the tasks involved in your system.
-   - The object creation mechanisms/patterns can now be buried into the functionalities instead of using them into the client.
+   - The behavioral DPs can be integrated into you functionalities alongside the structural ones.   
    - There should only be one client for the whole system.
 2. Keep your files grouped (into packages/directories) by their responsibilities (an example project structure):
-
-3. Document your work in a separate markdown file.
+3. Document your work in a separate markdown file according to the requirements presented below (the structure can be extended of course):
 
 ## Chosen Domain
 
-The chosen domain remains the Coffee Shop Management System, which simulates how drinks are created, customized, and displayed on a shared menu.
+The chosen domain remains the Coffee Shop Management System, which models how drinks are created, customized, and presented to customers inside a digital café environment.
 
-In this lab, the focus shifts from object creation (covered in Lab 1) to object composition — how multiple classes and objects can work together to provide new, flexible functionalities.
+In this laboratory work, the focus shifts from the structural organization of drinks and menu items to the behaviour and interaction of system components. Instead of concentrating on how objects are built or combined, this lab explores how they communicate, react to changes, and adapt their behaviour at runtime.
+## Used Behavioural Patterns
 
-## Used Design Patterns
+- Observer Pattern – to monitor menu changes and automatically notify listeners when items are added or removed.
 
-- Decorator Pattern – for dynamic, on-demand customization of drinks.
-
-- Composite Pattern – for grouping items like drinks and snacks into combos.
-
-- Facade Pattern – for simplifying access to the entire system through one interface.
+- Strategy Pattern – to dynamically switch between different pricing rules (regular pricing, student discount, happy hour discount), depending on context such as time of day or user type.
 
 ## Implementation
 
-### Decorator Pattern 
+### Observer Pattern 
 #### Purpose
 
-The Decorator Pattern allows behavior to be added to individual objects dynamically, without modifying their original class.
-In the coffee shop system, this pattern is used to create custom drinks on the fly — for example, adding syrup, toppings, whipped cream, or ice to any base drink, depending on the client’s preferences.
+The Observer Pattern provides a way for objects to “listen” and react whenever another object changes.
+Instead of manually printing logs everywhere, the system now automatically logs menu updates when items are added or removed.
 
-While the Builder Pattern (from Lab 1) was used for predefined recipes like Caramel Latte or Pumpkin Spice Latte,
-the Decorator Pattern now enables fully dynamic customization — letting customers create their own drinks at runtime.
+This makes the communication between components cleaner, more maintainable, and decoupled.
 
 #### Implementation
 
-All decorators extend an abstract class DrinkDecorator, which itself extends the base class Drink.
-This allows decorators to wrap around any Drink object and modify its behavior without changing the underlying class.
+The Observer interface defines a simple update method:
 
 ```java
-public abstract class DrinkDecorator extends Drink {
+public interface Observer {
+   void update(MenuComponent item, String action);
 
-    protected final Drink drink;
-
-    DrinkDecorator(Drink drink) {
-        super(drink.getName(), drink.getPrice());
-        this.drink = drink;
-    }
 }
 ```
 
-Each concrete decorator adds its own name and price modifications while keeping the structure flexible.
-
-#### Example: Ice Decorator
+A concrete observer MenuLogger listens to the menu:
 
 ```java
-public class IceDecorator extends DrinkDecorator {
-    
-    public IceDecorator(Drink drink) {
-        super(drink);
-    }
+public class MenuLogger implements Observer{
 
-    @Override
-    public String getName() {
-        return drink.getName() + " (iced)";
-    }
-
-    @Override
-    public double getPrice() {
-        return drink.getPrice() + 2.0;
-    }
+   @Override
+   public void update(MenuComponent item, String action) {
+      if (action.equals("added")) {
+         System.out.println("-New menu item added: " + item.getName() + " - " + item.getPrice());
+      }
+      else if (action.equals("removed")) {
+         System.out.println("-Menu item removed: " + item.getName() + " - " + item.getPrice());
+      }
+   }
 }
-
 ```
 
-#### Example: Syrup Decorator
+In order to apply the Observer pattern, I extended the Menu class with:
+
+1. A list of observers: 
 
 ```java
-public class SyrupDecorator extends DrinkDecorator {
-
-    private Syrup syrup;
-
-    public SyrupDecorator(Drink drink, Syrup syrup) {
-        super(drink);
-        this.syrup = syrup;
-    }
-
-    @Override
-    public String getName() {
-        return drink.getName() + " + " + syrup + " Syrup";
-    }
-
-    @Override
-    public double getPrice() {
-        return drink.getPrice() + 5.0;
-    }
-}
-
+private List<Observer> observers;
 ```
 
-Other decorators, such as ToppingDecorator and WhippedCreamDecorator, follow the same structure.
-
-#### Example Usage (from Main)
-
-In the CoffeeShopFacade (will explain in the following sections), a dynamic drink is built step-by-step using decorators, starting from a base drink (Latte) and layering new features:
+2. New methods to manage and notify observers:
 
 ```java
-   public void prepareCustomDrink() {
-    Drink customDrink = new ToppingDecorator(
-            new IceDecorator(
-                    new WhippedCreamDecorator(
-                            new SyrupDecorator(
-                                    new LatteFactory().createDrink(), COCONUT
-                            )
-                    )
-            ),
-            MARSHMALLOWS
-    );
+public void addObserver(Observer observer) {
+   observers.add(observer);
+}
 
-    menu.add(customDrink);
+public void removeObserver(Observer observer) {
+   observers.remove(observer);
+}
+
+public void notifyObservers(MenuComponent item, String action) {
+   for (Observer observer : observers) {
+      observer.update(item, action);
+   }
 }
 ```
+
+3. Integration of observers inside menu modification methods:
+
+```java
+ public void add(MenuComponent item) {
+
+   menuItems.add(item);
+   notifyObservers(item, "added");
+}
+
+public void remove(MenuComponent item) {
+   menuItems.remove(item);
+   notifyObservers(item, "removed");
+}
+```
+
 #### Output Example:
-```
-- Latte + COCONUT Syrup + WhippedCream (iced) + MARSHMALLOWS Topping: 54.0
 
+
+```
+LOGS: Preparing the menu...
+        -New menu item added: Espresso - 20.0
+        -New menu item added: Latte - 40.0
 ```
 
 -----------------------
-### Composite Method
+### Strategy Pattern
 #### Purpose
-The Composite Pattern lets you treat individual objects and groups of objects in the same way. It is especially useful for representing tree-like structures, such as menus or orders that contain other items.
+The Strategy Pattern provides a way to select different algorithms or behaviors at runtime, without modifying the class that uses them.
+In this project, the Strategy Pattern is used to dynamically switch between different pricing and menu-display rules depending on:
 
-In this project, the Composite pattern was used to create combos or bundles of items in the coffee shop system.
-For example, a combo can include both drinks and snacks — or even other combos — and still be handled as a single MenuComponent.
+- whether the user is a student (student discount),
 
-In my code, this allows the system to specifically calculate the total price and display the entire order tree recursively.
+- whether it is Happy Hour (time-based discount),
 
+- or neither (regular prices).
+
+This allows the system to adapt automatically to different situations (time of day or user type) while keeping the Menu class clean and free of large if-else blocks.
 #### Implementation
 
-To implement this pattern, I first restructured my model slightly compared to Lab 1.
-Instead of having Drink as the root class, I created an abstract class BaseItem and an interface MenuComponent to unify the structure of all menu elements.
+All pricing strategies implement the same method printMenu(), which defines how menu items should be displayed and priced:
+```java
+public interface Strategy {
+   void printMenu(List<MenuComponent> items);
+}
+```
+Each strategy defines its own pricing logic:
 
 ```java
-public interface MenuComponent {
-    String getName();
-    double getPrice();
-    void print();
+public class StudentStrategy implements Strategy {
+   @Override
+   public void printMenu(List<MenuComponent> items) {
+      for (MenuComponent item : items) {
+         System.out.println(item.getName() + ".........." + item.getPrice()*0.5+" (was  " + item.getPrice() + ")");
+      }
+      System.out.println("-----------------------");
+   }
 }
 ```
 
 ```java
-public abstract class BaseItem implements MenuComponent {
-    private final String name;
-    private final double price;
-
-    public BaseItem(String name, double price) {
-        this.name = name;
-        this.price = price;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public double getPrice() {
-        return price;
-    }
-
-    public void print() {
-        System.out.println("- " + this.getName() + ": " + this.getPrice());
-    }
-}
-```
-
-Each individual menu item (drink or snack - leaf components) extends BaseItem, while groups of items (combos) implement the same MenuComponent interface — making them all compatible in the same hierarchy.
-
-```java
-public class Drink extends BaseItem {
-    public Drink(String name, double price) {
-        super(name, price);
-    }
+public class HappyHourStrategy implements Strategy {
+   @Override
+   public void printMenu(List<MenuComponent> items) {
+      for (MenuComponent item : items) {
+         System.out.println(item.getName() + ".........." + item.getPrice()*0.8+" (was  " + item.getPrice() + ")");
+      }
+      System.out.println("-----------------------");
+   }
 }
 ```
 
 ```java
-public class Snack extends BaseItem{
+public class RegularStrategy implements Strategy {
 
-    public Snack(String name, double price) {
-        super(name, price);
-    }
+   @Override
+   public void printMenu(List<MenuComponent> items) {
+      for(MenuComponent item : items) {
+         item.print();
+      }
+   }
 }
 ```
 
-The Combo class stores a list of MenuComponent objects (which can be single items or other combos).
-It overrides getPrice() to sum up the prices of all included components, and print() recursively prints their structure.
+To support Strategy, the Menu class was extended with:
+
+1. A strategy field: 
+
 ```java
-public class Combo implements MenuComponent {
-    private String name;
-    private List<MenuComponent> items = new ArrayList<>();
+private Strategy strategy; 
+```
 
+2. A setter: 
 
-    public Combo(String name) {
-        this.name = name;
-    }
+```java
+public void setStrategy(Strategy strategy) {
+   this.strategy = strategy;
+}
+```
 
-    @Override
-    public String getName() {
-        return this.name;
-    }
+3. A redesigned printMenu() method:
 
-    @Override
-    public double getPrice() {
-        return items.stream().mapToDouble(MenuComponent::getPrice).sum();
-    }
+```java
+    public void printMenu(String type) {
+   if (type!=null && type.equals("student")) {
+      this.setStrategy(new StudentStrategy());
+      System.out.println("\n==================== STUDENT MENU (50% discount) ====================");
+   }
+   else{
+      LocalTime now = LocalTime.now();
+//            LocalTime now = LocalTime.of(17, 30);
+      LocalTime happyHourStart = LocalTime.of(17, 0); // 5:00 PM
+      LocalTime happyHourEnd = LocalTime.of(19, 0);
 
-    @Override
-    public void print() {
-        System.out.println("\nCombo: " + name);
-        for (MenuComponent item : items) {
-            item.print();
-        }
-        System.out.println("Total (" + name + "): " + getPrice());
-    }
-
-    public void addComponent(MenuComponent component) {
-        items.add(component);
-    }
-
-    public void removeComponent(MenuComponent component) {
-        items.remove(component);
-    }
+      if (now.isAfter(happyHourStart) && now.isBefore(happyHourEnd)){
+         this.setStrategy(new HappyHourStrategy());
+         System.out.println("\n==================== HAPPY HOUR MENU (17:00–19:00, -20%) ====================");
+      }
+      else{
+         this.setStrategy(new RegularStrategy());
+         System.out.println("\n==================== MENU ====================");
+      }
+   }
+   this.strategy.printMenu(menuItems);
 }
 
 ```
+
+
 
 #### Example Usage 
 
-In the CoffeeShopFacade, I used this pattern to create nested combos of drinks and snacks:
+In the Main class, the client can choose which menu to display simply by calling a specific function:
 
-```java
- public void createCombos() {
-        Combo morningCombo = new Combo("Morning Combo");
-        morningCombo.addComponent(new LatteFactory().createDrink());
-        morningCombo.addComponent(new Snack("Croissant", 15));
-
-        Combo afternoonCombo = new Combo("Afternoon Combo");
-        afternoonCombo.addComponent(new EspressoFactory().createDrink());
-        afternoonCombo.addComponent(new Snack("Cookie", 15));
-
-        Combo fullOrder = new Combo("Full Order");
-        fullOrder.addComponent(morningCombo);
-        fullOrder.addComponent(afternoonCombo);
-
-        menu.add(fullOrder);
-    }
-```
-
-#### Output Example:
-```
-Combo: Full Order
-
-Combo: Morning Combo
-- Latte: 40.0
-- Croissant: 15.0
-Total (Morning Combo): 55.0
-
-Combo: Afternoon Combo
-- Espresso: 20.0
-- Cookie: 15.0
-Total (Afternoon Combo): 35.0
-Total (Full Order): 90.0
------------------------
-```
------------------------
-
-### Facade Pattern 
-#### Purpose
-
-The Facade Pattern provides a simplified, unified interface to a complex subsystem. It hides the internal details and dependencies of multiple components behind a single high-level class, making it easier for clients to interact with the system.
-
-In this project, the CoffeeShopFacade class acts as the main entry point for all coffee shop operations.
-It brings together functionalities from multiple patterns — Factory, Builder, Decorator, Composite, and Singleton — and exposes them through simple, high-level methods like prepareBasicMenu(), prepareCustomDrink(), or createCombos().
-
-This allows the client (in this case, the Main class) to interact with the system using just a few intuitive method calls, without worrying about how objects are created, decorated, or added to the menu.
-
-```java
-public class CoffeeShopFacade {
-
-    private final Menu menu;
-    private final CoffeeDirector director;
-
-    public CoffeeShopFacade() {
-        this.menu = Menu.getInstance();
-        this.director = new CoffeeDirector();
-
-    }
-
-    public void prepareBasicMenu() {
-        menu.add(new EspressoFactory().createDrink());
-        menu.add(new LatteFactory().createDrink());
-        menu.add(new CappuccinoFactory().createDrink());
-    }
-
-    public void prepareSpecialtyMenu() {
-        CustomDrinkBuilder regularBuilder = new RegularDrinkBuilder();
-        CustomDrinkBuilder specialBuilder = new SpecialtyDrinkBuilder();
-
-        menu.add(director.makeCaramelLatte(regularBuilder));
-        menu.add(director.makeChocolateCappuccino(specialBuilder));
-        menu.add(director.makeIcedChocolateMocha(specialBuilder));
-        menu.add(director.makeCinnamonCaramelLatte(specialBuilder));
-        menu.add(director.makePumpkinSpiceLatte(specialBuilder));
-
-    }
-
-    public void showMenu() {
-        menu.printMenu();
-    }
-
-    public void prepareCustomDrink() {
-        Drink customDrink = new ToppingDecorator(
-                new IceDecorator(
-                        new WhippedCreamDecorator(
-                                new SyrupDecorator(
-                                        new LatteFactory().createDrink(), COCONUT
-                                )
-                        )
-                ),
-                MARSHMALLOWS
-        );
-
-        customDrink.print();
-
-        menu.add(customDrink);
-    }
-
-    public void createCombos() {
-        Combo morningCombo = new Combo("Morning Combo");
-        morningCombo.addComponent(new LatteFactory().createDrink());
-        morningCombo.addComponent(new Snack("Croissant", 15));
-
-        Combo afternoonCombo = new Combo("Afternoon Combo");
-        afternoonCombo.addComponent(new EspressoFactory().createDrink());
-        afternoonCombo.addComponent(new Snack("Cookie", 15));
-
-        Combo fullOrder = new Combo("Full Order");
-        fullOrder.addComponent(morningCombo);
-        fullOrder.addComponent(afternoonCombo);
-
-        menu.add(fullOrder);
-    }
-}
 
 ```
+   System.out.println("Student came in...");
+        coffeeShop.showStudentMenu();
 
-#### Example Usage 
-With the Facade in place, the Main class (the only client) doesn’t need to know anything about the internal structure of the system — it simply calls the high-level methods:
 
-```java
-public class Main {
-    public static void main(String[] args) {
-
-        CoffeeShopFacade coffeeShop = new CoffeeShopFacade();
-
-        coffeeShop.prepareBasicMenu();
-        coffeeShop.prepareSpecialtyMenu();
-
-        coffeeShop.prepareCustomDrink();
-        coffeeShop.createCombos();
-
+        System.out.println("Student left:");
         coffeeShop.showMenu();
+```
 
-    }
+CoffeeShopFacade was also adapted to fit the strategy pattern:
+
+```java 
+  public void showMenu() {
+   menu.printMenu(null);
+}
+
+public void showStudentMenu(){
+   menu.printMenu("student");
 }
 ```
+
 #### Output Example:
 ```
-- Espresso: 20.0
-- Latte: 40.0
-- Cappuccino: 50.0
-- Caramel Latte: 60.0
-- Chocolate Cappuccino: 60.0
-- Iced Chocolate Mocha: 65.0
-- Cinnamon Caramel Latte: 75.0
-- Pumpkin Spice Latte: 75.0
-- Latte + COCONUT Syrup + WhippedCream (iced) + MARSHMALLOWS Topping: 54.0
+==================== STUDENT MENU (50% discount) ====================
+Espresso..........10.0 (was  20.0)
+Latte..........20.0 (was  40.0)
+Cappuccino..........25.0 (was  50.0)
+Caramel Latte..........30.0 (was  60.0)
+Chocolate Cappuccino..........30.0 (was  60.0)
+Iced Chocolate Mocha..........32.5 (was  65.0)
+Cinnamon Caramel Latte..........37.5 (was  75.0)
+Pumpkin Spice Latte..........37.5 (was  75.0)
+Latte + COCONUT Syrup + WhippedCream (iced) + MARSHMALLOWS Topping..........27.0 (was  54.0)
+-----------------------
+Student left:
 
-Combo: Full Order
-
-Combo: Morning Combo
-- Latte: 40.0
-- Croissant: 15.0
-Total (Morning Combo): 55.0
-
-Combo: Afternoon Combo
-- Espresso: 20.0
-- Cookie: 15.0
-Total (Afternoon Combo): 35.0
-Total (Full Order): 90.0
+==================== MENU ====================
+Espresso..........20.0
+Latte..........40.0
+Cappuccino..........50.0
+Caramel Latte..........60.0
+Chocolate Cappuccino..........60.0
+Iced Chocolate Mocha..........65.0
+Cinnamon Caramel Latte..........75.0
+Pumpkin Spice Latte..........75.0
+Latte + COCONUT Syrup + WhippedCream (iced) + MARSHMALLOWS Topping..........54.0
+```
 -----------------------
 
-```
+
 
 ## Conclusion
-In this laboratory work, I successfully extended the Coffee Shop Management System by integrating three structural design patterns — Decorator, Composite, and Facade — to enhance flexibility, scalability, and usability.
+In this laboratory work, the Coffee Shop Management System was extended with behavioural design patterns that enhance communication, flexibility, and runtime adaptability between system components.
 
-The Decorator Pattern allowed dynamic drink customization without altering the base classes, making it possible to combine multiple modifications (like syrup, toppings, or ice) at runtime. The Composite Pattern introduced hierarchical menu structures, enabling individual items and combos to be treated uniformly. Finally, the Facade Pattern unified the system under a single, simple interface, making the client’s interaction effortless and clean.
+The Observer Pattern introduced an event-based mechanism that automatically reports changes to the menu. Whenever a drink or combo is added or removed, registered observers (such as the MenuLogger) are immediately notified. This eliminated the need for manual logging inside business logic, reduced coupling, and improved system transparency.
 
-Overall, this lab demonstrated how structural design patterns help organize complex systems into modular, extensible, and easy-to-maintain architectures — turning the coffee shop simulation into a cohesive and realistic software model.
+The Strategy Pattern allowed the pricing logic to be fully decoupled from the Menu class. Depending on the context — whether a student requests the menu or whether the time falls within Happy Hour — the system switches strategies seamlessly. This provides clean, scalable runtime behaviour without cluttering the code with conditional logic.
+
+Together, these behavioural patterns improved the modularity, maintainability, and extensibility of the system. The Coffee Shop project now not only supports advanced structural composition of drinks and combos, but also demonstrates intelligent runtime decisions and inter-object communication — forming a more complete and realistic software architecture.

@@ -13,7 +13,7 @@ public class Menu {
 
     // Lab 4 Additions
     private List<Observer> observers; //Observer pattern
-    public Strategy strategy; //Strategy pattern
+    private Strategy strategy; //Strategy pattern
 
     private Menu(){
         menuItems = new ArrayList<>();
